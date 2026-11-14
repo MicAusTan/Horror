@@ -11,14 +11,14 @@ const items=[],bats=[],closets=[];let spawn,mspawn,exitP;
 MAP.forEach((row,r)=>[...row].forEach((ch,c)=>{const p=ctr(c,r);
  if(ch=='F')items.push(p);if(ch=='B')bats.push(p);if(ch=='H')closets.push(p);
  if(ch=='S')spawn=p;if(ch=='M')mspawn=p;if(ch=='X')exitP=p;}));
-const defH={fuses:3,mSpeed:5.2,wSpeed:2.8,hear:18,sight:14,drain:0,sdrain:0,tele:45,revive:4};
-const defP={sens:1,vol:1,prox:true,range:16,bright:1,fov:75,mvol:1,js:true};
+const defH={fuses:3,mSpeed:5.2,wSpeed:2.8,hear:18,sight:14,drain:0,sdrain:0,tele:45,grace:30,revive:4};
+const defP={sens:1,vol:1,prox:true,range:16,bright:1,fov:75,mvol:1,avol:.5,js:true};
 const HS=ld('hh_h',defH),PS=ld('hh_p',defP);
-const PSch=[['sens','Mouse sensitivity',.3,2.5,.1],['mvol','Master volume',0,1,.05],['vol','Voice volume',0,1,.05],['range','Voice range (m)',4,40,1],['bright','Brightness',.5,3,.1],['fov','Field of view',60,100,1]];
-const HSch=[['fuses','Fuses needed',1,4,1],['mSpeed','Monster chase speed',1.5,10,.1],['wSpeed','Monster roam speed',1,8,.1],['hear','Monster hearing (m)',6,40,1],['sight','Monster sight (m)',6,30,1],['drain','Flashlight drain (%/s, 0 = infinite)',0,3,.1],['sdrain','Sprint drain (/s, 0 = infinite)',0,3,.1],['tele','Monster vent trip interval (s)',15,120,5],['revive','Revive time (s)',1,10,.5]];
+const PSch=[['sens','Mouse sensitivity',.3,2.5,.1],['mvol','Master volume',0,1,.05],['avol','Ambience volume',0,1,.05],['vol','Voice volume',0,1,.05],['range','Voice range (m)',4,40,1],['bright','Brightness',.5,3,.1],['fov','Field of view',60,100,1]];
+const HSch=[['fuses','Fuses needed',1,4,1],['mSpeed','Monster chase speed',1.5,10,.1],['wSpeed','Monster roam speed',1,8,.1],['hear','Monster hearing (m)',6,40,1],['sight','Monster sight (m)',6,30,1],['drain','Flashlight drain (%/s, 0 = infinite)',0,3,.1],['sdrain','Sprint drain (/s, 0 = infinite)',0,3,.1],['tele','Monster vent trip interval (s)',15,120,5],['grace','Grace period at start (s)',0,120,5],['revive','Revive time (s)',1,10,.5]];
 function build(el,sch,o,key){el.innerHTML='';for(const[k,l,mn,mx,st]of sch){const r=document.createElement('label');
  r.innerHTML=`<span>${l}</span><input type="range" min="${mn}" max="${mx}" step="${st}" value="${o[k]}"><b>${o[k]}</b>`;
- const i=r.querySelector('input'),b=r.querySelector('b');i.oninput=()=>{o[k]=+i.value;b.textContent=i.value;sv(key,o)};el.append(r)}}
+ const i=r.querySelector('input'),b=r.querySelector('b');i.oninput=()=>{o[k]=+i.value;b.textContent=i.value;sv(key,o);if(typeof applyVol=='function')applyVol()};el.append(r)}}
 build($('ps'),PSch,PS,'hh_p');build($('hs'),HSch,HS,'hh_h');
 $('js').checked=PS.js!==false;$('js').onchange=e=>{PS.js=e.target.checked;sv('hh_p',PS)};$('prox').checked=PS.prox;$('prox').onchange=e=>{PS.prox=e.target.checked;sv('hh_p',PS)};
 $('nm').value='Player'+(Math.random()*90+10|0);
@@ -31,8 +31,8 @@ const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
 const sc=new THREE.Scene();sc.background=new THREE.Color(0x050403);sc.fog=new THREE.FogExp2(0x050403,.085);
 const cam=new THREE.PerspectiveCamera(75,1,.1,80);sc.add(cam);
 const amb=new THREE.AmbientLight(0x554433,.3);sc.add(amb);
-const fl=new THREE.SpotLight(0xffeecc,2,32,.55,.5,1.4);cam.add(fl);
-const tg=new THREE.Object3D();tg.position.z=-1;cam.add(tg);fl.target=tg;
+const fl=new THREE.SpotLight(0xffeecc,2,32,.55,.5,1.4);sc.add(fl);
+const tg=new THREE.Object3D();sc.add(tg);fl.target=tg;
 const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:1});
 function tex(w,fn,rx,ry){const c=document.createElement('canvas');c.width=c.height=w;fn(c.getContext('2d'),w);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry);return t}
 const stain=(g,w,n,a)=>{for(let i=0;i<n;i++){g.fillStyle='rgba(0,0,0,'+rnd()*a+')';g.fillRect(rnd()*w,rnd()*w,rnd()*30,rnd()*30)}};
@@ -49,7 +49,7 @@ const bm=bats.map(p=>prop(p,new THREE.BoxGeometry(.25,.4,.25),0x40c060,.8,0x1050
 closets.forEach(p=>prop(p,new THREE.BoxGeometry(1.6,2.6,1.6),0x2c1f16,1.3));
 const ventT=tex(64,(g,w)=>{g.fillStyle='#0b0908';g.fillRect(0,0,w,w);g.fillStyle='#3a342e';for(let i=4;i<w;i+=10)g.fillRect(4,i,w-8,4);g.strokeStyle='#4a423a';g.lineWidth=4;g.strokeRect(2,2,w-4,w-4)},1,1);
 const vents=[[3,2],[14,2],[1,7],[10,5],[14,5],[7,9],[13,9],[8,11],[2,9]].map(p=>{const q=ctr(p[0],p[1]),v=new THREE.Mesh(new THREE.BoxGeometry(1.5,.06,1.5),new THREE.MeshStandardMaterial({map:ventT,roughness:.6}));v.position.set(q[0],.04,q[1]);sc.add(v);return q});
-const exm=prop(exitP,new THREE.BoxGeometry(2,2.8,.3),0x501010,1.4,0x300808);
+const exm=prop(exitP,new THREE.BoxGeometry(2,2.8,.3),0x501010,1.4,0x300808);buildDecor();
 function avatar(){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,1.4,8),mat(0x6a7a8a));b.position.y=.7;g.add(b);
  const h=new THREE.Mesh(new THREE.SphereGeometry(.22,8,8),mat(0xc9b9a0));h.position.y=1.55;g.add(h);
  const l=new THREE.PointLight(0xffeecc,.5,5);l.position.y=1.5;g.add(l);sc.add(g);return g}
@@ -100,7 +100,7 @@ function onHost(c,d){const p=P[c.peer];
  else if(d.t=='take'&&started){const a=d.k=='f'?F:B,pos=d.k=='f'?items:bats;if(a[d.i]==0&&Math.hypot(pos[d.i][0]-p.x,pos[d.i][1]-p.z)<3)a[d.i]=1}
  else if(d.t=='rev'&&P[d.id]&&P[d.id].down&&Math.hypot(P[d.id].x-p.x,P[d.id].z-p.z)<3){const q=P[d.id];q.rp+=d.dt;if(q.rp>=HS.revive){q.down=0;q.rp=0}}}
 function snap(){const o={};for(const id in P){const p=P[id];o[id]=[p.x,p.z,p.ry,p.down,p.hid,p.n,p.spr,p.jv||0]}
- return{t:'s',go:started,P:o,m:[M.x,M.z,M.ry,M.st,M.vs=='gone'?1:0,M.py||0],e:M.ev,f:F,b:B,open:F.slice(0,HS.fuses).every(x=>x),over,set:HS,ids:Object.keys(P)}}
+ return{t:'s',go:started,P:o,m:[M.x,M.z,M.ry,M.st,(M.vs=='gone'||(M.age||0)<HS.grace)?1:0,M.py||0],e:M.ev,f:F,b:B,open:F.slice(0,HS.fuses).every(x=>x),over,set:HS,ids:Object.keys(P)}}
 function tick(){const p=P[me];if(started&&p&&!p.down){Object.assign(p,{x:L.x,z:L.z,ry:L.ry,hid:L.hid?1:0,spr:L.spr?1:0})}
  S=snap();for(const c of conns)if(c.open)c.send(S);onState()}
 function onClient(d){if(d.t=='s'){S=d;onState()}}
@@ -159,7 +159,7 @@ function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-last
   $('top').textContent=`Fuses ${S.f.slice(0,set.fuses).reduce((a,b)=>a+b,0)} / ${set.fuses}`+(S.open?' - Power on. Reach the exit.':'');
   $('dn').style.display=down?'block':'none';if(down&&!L.pd){L.hid=null;const jv=me_[7];if(PS.js!==false){L.js=L.jt=jv==1?1.8:1.1;L.jv=jv;scream(jv)}}L.pd=down;
   cam.fov=PS.fov;cam.updateProjectionMatrix();
-  cam.position.set(L.x,(down?.5:(L.hid?1.5:1.6))+(L.mv?Math.sin(now/(L.spr?90:150))*.045:0)+(L.js>0?(rnd()-.5)*(L.jv==2?.3:.12):0),L.z);cam.rotation.set(L.pitch,L.ry,0,'YXZ');
+  cam.position.set(L.x,(down?.5:(L.hid?1.5:1.6))+(L.mv?Math.sin(now/(L.spr?90:150))*.045:0)+(L.js>0?(rnd()-.5)*(L.jv==2?.3:.12):0),L.z);cam.rotation.set(L.pitch,L.ry,0,'YXZ');fl.position.copy(cam.position);tg.position.set(cam.position.x-Math.sin(L.ry)*Math.cos(L.pitch),cam.position.y+Math.sin(L.pitch),cam.position.z-Math.cos(L.ry)*Math.cos(L.pitch));
   // monster & others
   const[mx,mz,mry,mst,gone]=S.m;mon.visible=!gone;mon.position.x+=(mx-mon.position.x)*.3;mon.position.z+=(mz-mon.position.z)*.3;mon.rotation.y=mry;mon.rotation.z=Math.sin(now/400)*.05+(mst=='chase'?Math.sin(now/40)*.03:0);limbs.forEach((a,i)=>a.rotation.x=Math.sin(now/(mst=='chase'?120:380)+i*3)*.35);mon.position.y=S.m[5];
   if(L.js>0){L.js-=dt;L.jsd=1;let a=Math.atan2(L.x-mx,L.z-mz)-L.ry;a=Math.atan2(Math.sin(a),Math.cos(a));if(L.js>L.jt-.5)L.ry+=a*.25;const dd=1+(L.jv==1?1.5*L.js/L.jt:0);mon.visible=true;mon.scale.setScalar(1.3);mon.position.set(L.x-Math.sin(L.ry)*dd,-2.6-(L.jv==3?1.6*L.js/L.jt:0),L.z-Math.cos(L.ry)*dd);mon.rotation.set(0,L.ry+Math.PI,0);L.pitch+=(.3-L.pitch)*.3}

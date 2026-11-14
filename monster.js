@@ -11,7 +11,8 @@ function facing(p,x,z){const dx=x-p.x,dz=z-p.z;return(-Math.sin(p.ry)*dx-Math.co
 function nab(p,v){p.down=1;p.jv=v;p.rp=0;p.hid=0}
 function pickVent(ex){const up=Object.values(P).filter(p=>!p.down);
  if(up.length&&rnd()<.3){const q=up[rnd()*up.length|0];return vents.filter(v=>v!==ex).reduce((a,b)=>Math.hypot(a[0]-q.x,a[1]-q.z)<Math.hypot(b[0]-q.x,b[1]-q.z)?a:b)}let c=vents.filter(v=>v!==ex&&up.every(p=>Math.hypot(p.x-v[0],p.z-v[1])>10));if(!c.length)c=vents.filter(v=>v!==ex);return c[rnd()*c.length|0]}
-function sim(dt){if(!started||over)return;const m=M,ps=Object.values(P);for(const p of ps){if(p.ox==null||Math.hypot(p.x-p.ox,p.z-p.oz)>.3){p.ox=p.x;p.oz=p.z;p.still=0}else p.still+=dt}m.tt=(m.tt==null?HS.tele:m.tt)-dt;
+function sim(dt){if(!started||over)return;const m=M,ps=Object.values(P);for(const p of ps){if(p.ox==null||Math.hypot(p.x-p.ox,p.z-p.oz)>.3){p.ox=p.x;p.oz=p.z;p.still=0}else p.still+=dt}if((m.age=(m.age||0)+dt)<HS.grace)return;
+ m.tt=(m.tt==null?HS.tele:m.tt)-dt;
  for(const p of ps){p.sc=(p.sc||0)+dt;if(p.sc>.25){p.still=Math.hypot(p.x-(p.ox==null?p.x:p.ox),p.z-(p.oz==null?p.z:p.oz))<.15?(p.still||0)+p.sc:0;p.ox=p.x;p.oz=p.z;p.sc=0}}
  if(m.vs=='in'||m.vs=='out'){m.vt-=dt;const k=Math.max(0,m.vt)/1.4;m.py=m.vs=='in'?-2.8*(1-k):-2.8*k;
   if(m.vt<=0){if(m.vs=='in'){m.vs='gone';m.vt=5+rnd()*8;const t=pickVent(m.vc);m.vc=t;m.x=t[0];m.z=t[1];m.py=-2.8}else{for(const p of ps)if(!p.down&&!p.hid&&Math.hypot(p.x-m.x,p.z-m.z)<2.6)nab(p,3);m.vs=null;m.py=0;m.st='search';m.t=0;m.tx=m.x;m.tz=m.z}}return}
