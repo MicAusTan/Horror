@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>The Hollow House</title>
+<link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English&display=swap" rel="stylesheet">
 <style>
 :root{--bone:#d8cfb8;--blood:#9a2020;--ink:#0b0908;--dim:#7d7462}
@@ -65,6 +66,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;back
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script>
 const $=i=>document.getElementById(i);
+const rnd=()=>Math.random();
 const ld=(k,d)=>{try{return{...d,...JSON.parse(localStorage.getItem(k))}}catch{return{...d}}};
 const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
 // ---------- map & settings ----------
@@ -134,7 +136,7 @@ let F=items.map(()=>0),B=bats.map(()=>0),over=null;
 const L={x:0,z:0,ry:0,pitch:0,stam:5,bat:100,fon:true,hid:null};
 const keys={};let act=false;
 const cfg=()=>isHost?HS:(S&&S.set)||HS;
-const rnd=()=>Math.random();
+
 const newP=n=>({x:spawn[0],z:spawn[1],ry:0,down:0,hid:0,n,spr:0,rp:0});
 function toHost(m){if(m.t=='take')sfx(2200,.2,.25,null,null,'highpass');if(isHost)onHost({peer:me},m);else if(hconn&&hconn.open)hconn.send(m)}
 
