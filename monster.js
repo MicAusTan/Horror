@@ -1,12 +1,13 @@
 // ---------- monster AI (host only) ----------
 const cell=(x,z)=>(z/C|0)*W+(x/C|0);
-const solid=(x,z)=>{const c=x/C|0,r=z/C|0;return r<0||c<0||r>=H||c>=W||MAP[r][c]=='#'};
+const pass=(x,y)=>{const k=MAP[y]&&MAP[y][x];return!!k&&k!='#'&&k!='%'&&k!='T'&&!(k=='D'&&!DOPEN)};
+const solid=(x,z)=>{const c=x/C|0,r=z/C|0;return r<0||c<0||r>=H||c>=W||!pass(c,r)};
 function los(ax,az,bx,bz){const d=Math.hypot(bx-ax,bz-az),n=d/.5|0;for(let i=1;i<n;i++)if(solid(ax+(bx-ax)*i/n,az+(bz-az)*i/n))return false;return true}
 function nextPt(x,z,tx,tz){const sc_=cell(x,z),tc=cell(tx,tz);if(sc_==tc)return[tx,tz];
  const prev=new Map([[tc,-1]]),q=[tc];
- for(let i=0;i<q.length&&!prev.has(sc_);i++){const c=q[i],cx=c%W,cy=c/W|0;for(const[dx,dy]of D){const nx=cx+dx,ny=cy+dy;if(MAP[ny]&&MAP[ny][nx]&&MAP[ny][nx]!='#'){const n=ny*W+nx;if(!prev.has(n)){prev.set(n,c);q.push(n)}}}}
+ for(let i=0;i<q.length&&!prev.has(sc_);i++){const c=q[i],cx=c%W,cy=c/W|0;for(const[dx,dy]of D){const nx=cx+dx,ny=cy+dy;if(pass(nx,ny)){const n=ny*W+nx;if(!prev.has(n)){prev.set(n,c);q.push(n)}}}}
  const n=prev.get(sc_);return n==null||n<0?[tx,tz]:ctr(n%W,n/W|0)}
-function randCell(near){for(let k=0;k<50;k++){const c=near?Math.max(1,Math.min(W-2,(near[0]/C|0)+(rnd()*7-3|0))):1+rnd()*(W-2)|0,r=near?Math.max(1,Math.min(H-2,(near[1]/C|0)+(rnd()*7-3|0))):1+rnd()*(H-2)|0;if(MAP[r][c]!='#')return ctr(c,r)}return spawn}
+function randCell(near){for(let k=0;k<50;k++){const c=near?Math.max(1,Math.min(W-2,(near[0]/C|0)+(rnd()*7-3|0))):1+rnd()*(W-2)|0,r=near?Math.max(1,Math.min(H-2,(near[1]/C|0)+(rnd()*7-3|0))):1+rnd()*(H-2)|0;if(pass(c,r)&&MAP[r][c]!=',')return ctr(c,r)}return spawn}
 function facing(p,x,z){const dx=x-p.x,dz=z-p.z;return(-Math.sin(p.ry)*dx-Math.cos(p.ry)*dz)/(Math.hypot(dx,dz)||1)}
 function nab(p,v){p.down=1;p.jv=v;p.rp=0;p.hid=0}
 function pickVent(ex){const up=Object.values(P).filter(p=>!p.down);
@@ -52,5 +53,5 @@ function sim(dt){if(!started||over)return;const m=M,ps=Object.values(P);for(cons
   if(p.down)continue}
  for(const p of ps)if(p.down)p.rp=Math.max(0,p.rp-dt*.5);
  if(ps.length&&ps.every(p=>p.down))over='lose';
- if(F.slice(0,HS.fuses).every(x=>x)&&ps.some(p=>!p.down&&Math.hypot(p.x-exitP[0],p.z-exitP[1])<2))over='win'}
+ if(F.slice(0,HS.fuses).every(x=>x)&&(!HS.obj||GEN)&&ps.some(p=>!p.down&&Math.hypot(p.x-exitP[0],p.z-exitP[1])<2))over='win'}
 

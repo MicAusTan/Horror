@@ -1,12 +1,13 @@
 // ---------- audio (all procedural) ----------
-let ac,mg,dg,rum,nb,lastEv=0,px=0,pz=0,stepT=0,mstepT=0,heartT=0,brT=0,ambT=8,pst='',pdown=0;
+let ac,mg,dg,wg,wt=0,rum,nb,lastEv=0,px=0,pz=0,stepT=0,mstepT=0,heartT=0,brT=0,ambT=8,pst='',pdown=0;
+function startGenHum(x,z){if(!ac)return;const o=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain(),p=ac.createPanner();o.type='sawtooth';o.frequency.value=48;f.frequency.value=220;g.gain.value=.5;p.refDistance=3;p.positionX.value=x;p.positionY.value=1;p.positionZ.value=z;o.connect(f);f.connect(g);g.connect(p);p.connect(mg);o.start()}
 function applyVol(){if(ac){mg.gain.value=.8*PS.mvol;dg.gain.value=.05*PS.avol}}
 function initAudio(){if(ac){ac.resume();return}ac=new AudioContext();mg=ac.createGain();mg.gain.value=.8;mg.connect(ac.destination);
  nb=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=rnd()*2-1;
  const lp=ac.createBiquadFilter();lp.frequency.value=180;dg=ac.createGain();dg.gain.value=.05*PS.avol;lp.connect(dg);dg.connect(mg);
  for(const f of[55,55.7,82.4]){const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=f;o.connect(lp);o.start()}
  const lf=ac.createOscillator(),lg=ac.createGain();lf.frequency.value=.07;lg.gain.value=90;lf.connect(lg);lg.connect(lp.frequency);lf.start();
- rum=ac.createGain();rum.gain.value=0;const ro=ac.createOscillator();ro.type='sawtooth';ro.frequency.value=38;const rl=ac.createBiquadFilter();rl.frequency.value=90;ro.connect(rl);rl.connect(rum);rum.connect(mg);ro.start();applyVol()}
+ rum=ac.createGain();rum.gain.value=0;const ro=ac.createOscillator();ro.type='sawtooth';ro.frequency.value=38;const rl=ac.createBiquadFilter();rl.frequency.value=90;ro.connect(rl);rl.connect(rum);rum.connect(mg);ro.start();const ws=ac.createBufferSource();ws.buffer=nb;ws.loop=true;const wf=ac.createBiquadFilter();wf.type='bandpass';wf.frequency.value=500;wf.Q.value=.6;wg=ac.createGain();wg.gain.value=0;ws.connect(wf);wf.connect(wg);wg.connect(mg);ws.start();applyVol()}
 addEventListener('pointerdown',initAudio);
 function sfx(f,len,vol,x,z,type){if(!ac)return;const s=ac.createBufferSource();s.buffer=nb;const fi=ac.createBiquadFilter();fi.type=type||'lowpass';fi.frequency.value=f;const g=ac.createGain(),t=ac.currentTime;
  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+len);s.connect(fi);fi.connect(g);
@@ -16,6 +17,7 @@ function scream(v){if(!ac)return;if(v==1)sfx(60,1.8,1);if(v==2)sfx(300,.5,1);if(
 function audio(dt,md,mst,gone,down){if(!ac||!ac.listener.positionX)return;const l=ac.listener;
  l.positionX.value=L.x;l.positionY.value=1.6;l.positionZ.value=L.z;l.forwardX.value=-Math.sin(L.ry);l.forwardY.value=0;l.forwardZ.value=-Math.cos(L.ry);l.upX.value=0;l.upY.value=1;l.upZ.value=0;
  mg.gain.value=.8*PS.mvol;rum.gain.value=gone?0:Math.max(0,1-md/16)*.3*PS.avol;
+ wt+=dt;const out=roomAt(L.x/C|0,L.z/C|0)=='yard';wg.gain.value+=((out?.22:.025)*(.75+.25*Math.sin(wt*.7))*PS.avol-wg.gain.value)*.05;
  const mv=Math.hypot(L.x-px,L.z-pz)>.02;px=L.x;pz=L.z;
  if(mv&&!L.hid&&(stepT-=dt)<=0){stepT=L.spr?.3:.5;sfx(450,.08,.12)}
  if(!gone&&mst!='stare'&&mst!='loom'&&(mstepT-=dt)<=0){mstepT=mst=='chase'?.3:.8;sfx(260,.12,.7,S.m[0],S.m[1])}
